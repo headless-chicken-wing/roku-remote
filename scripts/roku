@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+
+echo -e "Starting flask backend python3 server...\n"
+
+python3 ~/roku-remote/server.py &>/dev/null &
+
+sleep 3
+
+echo -e "Opening Roku webapp on http://localhost:5000...\n"
+
+/usr/bin/firefox --kiosk http://hplaptop.home.arpa:5000 &>/dev/null &
+
+sleep 3
+
+echo -e "Done!\n    ....Exiting now...\n"
+
+sleep 3
+
+exit 0
+
