@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Roku Remote</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #111;
+            color: #eee;
+            text-align: center;
+            padding: 2em;
+        }
+        h1 {
+            margin-bottom: 1em;
+        }
+        .dpad, .apps {
+            margin: 1em auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1em;
+        }
+        button {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 1em;
+            font-size: 1em;
+            border-radius: 0.5em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #555;
+        }
+        .app-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px;
+        }
+        .app-btn img {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 0.5em;
+            border-radius: 0.3em;
+        }
+
+       h1:hover {
+    	color: #81d4fa;
+    	text-shadow: 0 0 5px #4fc3f7;
+    	transform: scale(1.02);
+	}
+
+    </style>
+</head>
+<body>
+<h1 onclick="send('home')" style="cursor: pointer; color: #4fc3f7; display: flex; justify-content: center; align-items: center; gap: 0.5em;">
+    <span>🏠</span> Roku Remote <span>🏠</span>
+</h1>
+
+    <div class="dpad">
+        <button onclick="send('home')">Home</button>
+        <button onclick="send('up')">↑</button>
+        <button onclick="send('left')">←</button>
+        <button onclick="send('select')">OK</button>
+        <button onclick="send('right')">→</button>
+        <button onclick="send('down')">↓</button>
+        <button onclick="send('back')">Back</button>
+        <button onclick="send('play')">Play</button>
+        <button onclick="send('pause')">Pause</button>
+    </div>
+
+    <div class="apps" id="appButtons"></div>
+	<button onclick="showKeyboard()">Keyboard</button>
+	<div id="keyboardBox" style="margin-top: 1em; display: none;">
+    	<input type="text" id="keyboardInput" placeholder="Type text..." style="padding: 0.5em; width: 200px;" />
+    	<button onclick="sendKeyboard()">Send</button>
+	<button onclick="sendBackspace()">Backspace</button>
+    </div>
+
+    <script>
+        function send(button) {
+            fetch('http://hplaptop.home.arpa:5000/press/' + button)
+                .then(r => r.text())
+                .then(console.log)
+                .catch(console.error);
+        }
+
+        fetch('http://hplaptop.home.arpa:5000/apps')
+            .then(res => res.json())
+            .then(apps => {
+                const container = document.getElementById('appButtons');
+                apps.forEach(app => {
+                    const btn = document.createElement('button');
+                    btn.className = 'app-btn';
+                    btn.onclick = () => {
+                        fetch('http://hplaptop.home.arpa:5000/launch/' + app.id)
+                            .then(r => r.text())
+                            .then(console.log)
+                            .catch(console.error);
+                    };
+
+                    const img = document.createElement('img');
+                    img.src = app.icon;
+                    img.alt = app.name;
+
+                    const label = document.createElement('span');
+                    label.innerText = app.name;
+
+                    btn.appendChild(img);
+                    btn.appendChild(label);
+                    container.appendChild(btn);
+                });
+            })
+            .catch(console.error);
+
+function showKeyboard() {
+    document.getElementById("keyboardBox").style.display = "block";
+    document.getElementById("keyboardInput").focus();
+}
+
+function hideKeyboard() {
+    document.getElementById("keyboardBox").style.display = "none";
+    document.getElementById("keyboardInput").value = "";
+}
+
+function sendKeyboard() {
+    const text = document.getElementById("keyboardInput").value;
+    if (!text) return;
+
+    // Send empty string to clear previous input first
+    fetch('http://hplaptop.home.arpa:5000/type', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: "" })
+    }).then(() => {
+        // Then send actual input
+        fetch('http://hplaptop.home.arpa:5000/type', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+        })
+        .then(r => r.text())
+        .then(console.log)
+        .catch(console.error);
+    });
+
+    document.getElementById("keyboardInput").value = "";
+}
+
+document.getElementById("keyboardInput").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+        sendKeyboard();
+    }
+});
+
+function sendBackspace() {
+    fetch('http://hplaptop.home.arpa:5000/backspace')
+        .then(r => r.text())
+        .then(console.log)
+        .catch(console.error);
+}
+
+</script>
+
+</body>
+</html>
